@@ -1,55 +1,52 @@
 # jsmak-skills
 
-Claude Code / Cowork 에서 쓰는 개인 스킬 모음 마켓플레이스입니다.
+Claude Code / Cowork ?�서 ?�는 개인 ?�킬 모음 마켓?�레?�스?�니??
 
-## 설치
+## ?�치
 
 ```
-/plugin marketplace add <GITHUB_ID>/claude-skills
+/plugin marketplace add ���⿡_����_���̵�/claude-skills
 /plugin install jsmak-toolkit@jsmak-skills
 ```
 
-업데이트는 `/plugin marketplace update jsmak-skills` 입니다.
+?�데?�트??`/plugin marketplace update jsmak-skills` ?�니??
 
-## 수록 스킬
+## ?�록 ?�킬
 
-| 스킬 | 하는 일 |
+| ?�킬 | ?�는 ??|
 |---|---|
-| `arxiv-korean-translation` | arXiv 논문을 Abstract~Conclusion까지 한국어 경어체로 전문 번역 |
-| `obsidian-todo-sync` | Obsidian 볼트의 체크박스 할 일을 수집해 `TODO.md`로 정리 |
+| `arxiv-korean-translation` | arXiv ?�문??Abstract~Conclusion까�? ?�국??경어체로 ?�문 번역 |
+| `obsidian-todo-sync` | Obsidian 볼트??체크박스 ???�을 ?�집??`TODO.md`�??�리 |
 
-설치 후 `/jsmak-toolkit:arxiv-korean-translation` 처럼 플러그인 이름이 앞에 붙습니다.
+?�치 ??`/jsmak-toolkit:arxiv-korean-translation` 처럼 ?�러그인 ?�름???�에 붙습?�다.
 
-## 스킬 추가하기
+## ?�킬 추�??�기
 
-`skills/` 아래에 디렉토리를 하나 만들고 `SKILL.md`를 넣으면 끝입니다.
-`marketplace.json`은 건드리지 않아도 됩니다.
+`skills/` ?�래???�렉?�리�??�나 만들�?`SKILL.md`�??�으�??�입?�다.
+`marketplace.json`?� 건드리�? ?�아???�니??
 
 ```bash
 mkdir -p skills/<skill-name>
 $EDITOR skills/<skill-name>/SKILL.md
-claude plugin validate .          # 마켓플레이스 매니페스트 검증
-claude plugin validate ./skills   # 스킬 frontmatter 검증
-git add skills/<skill-name> && git commit -m "Add <skill-name> skill"
+claude plugin validate .          # 마켓?�레?�스 매니?�스??검�?claude plugin validate ./skills   # ?�킬 frontmatter 검�?git add skills/<skill-name> && git commit -m "Add <skill-name> skill"
 git push
 ```
 
-### SKILL.md 최소 형식
+### SKILL.md 최소 ?�식
 
 ```markdown
 ---
 name: skill-name
 description: >-
-  언제 이 스킬을 써야 하는지. 사용자가 실제로 던질 법한 문장을 예시로 넣으면
-  발동 정확도가 올라갑니다.
+  ?�제 ???�킬???�야 ?�는지. ?�용?��? ?�제�??�질 법한 문장???�시�??�으�?  발동 ?�확?��? ?�라갑니??
 ---
 
-# 스킬 제목
+# ?�킬 ?�목
 
-## 핵심 원칙
+## ?�심 ?�칙
 ...
 
-## 작업 절차
+## ?�업 ?�차
 ...
 ```
 
@@ -57,16 +54,16 @@ description: >-
 
 ```
 claude-skills/
-├── .claude-plugin/
-│   └── marketplace.json
-├── skills/
-│   ├── arxiv-korean-translation/SKILL.md
-│   └── obsidian-todo-sync/SKILL.md
-├── .gitignore
-├── LICENSE
-└── README.md
+?��??� .claude-plugin/
+??  ?��??� marketplace.json
+?��??� skills/
+??  ?��??� arxiv-korean-translation/SKILL.md
+??  ?��??� obsidian-todo-sync/SKILL.md
+?��??� .gitignore
+?��??� LICENSE
+?��??� README.md
 ```
 
-## 라이선스
+## ?�이?�스
 
 MIT
