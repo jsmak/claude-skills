@@ -17,6 +17,7 @@ Claude Code / Cowork 에서 쓰는 개인 스킬 모음 마켓플레이스입니
 |---|---|
 | `arxiv-korean-translation` | arXiv 논문을 Abstract~Conclusion까지 한국어 경어체로 전문 번역 |
 | `obsidian-todo-sync` | Obsidian 볼트의 체크박스 할 일을 수집해 `TODO.md`로 정리 |
+| `lecture-video` | 슬라이드 PDF + 페이지별 대본/음성을 Remotion으로 켄번즈·크로스페이드·나레이션 동기화 강조 효과가 있는 강의 mp4로 제작 |
 
 설치 후 `/jsmak-toolkit:arxiv-korean-translation` 처럼 플러그인 이름이 앞에 붙습니다.
 
@@ -61,6 +62,10 @@ claude-skills/
 │   └── marketplace.json
 ├── skills/
 │   ├── arxiv-korean-translation/SKILL.md
+│   ├── lecture-video/
+│   │   ├── SKILL.md
+│   │   ├── helpers/          # PDF→PNG, asset staging scripts
+│   │   └── template/         # drop-in Remotion module (config-driven)
 │   └── obsidian-todo-sync/SKILL.md
 ├── .gitattributes
 ├── .gitignore
