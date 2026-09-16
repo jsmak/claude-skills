@@ -1,7 +1,6 @@
 import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { THEME } from "./theme";
 
-export const ProgressBar: React.FC = () => {
+export const ProgressBar: React.FC<{ accent: string }> = ({ accent }) => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
   const pct = interpolate(frame, [0, durationInFrames], [0, 100], {
@@ -17,7 +16,7 @@ export const ProgressBar: React.FC = () => {
         left: 0,
         height: 5,
         width: `${pct}%`,
-        background: THEME.gold,
+        background: accent,
       }}
     />
   );

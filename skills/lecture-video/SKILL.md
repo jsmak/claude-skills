@@ -1,13 +1,15 @@
 ---
 name: lecture-video
 description: >-
-  Turn a folder of {slide deck PDF, per-page script .txt, per-page narration
-  .wav} into a narrated lecture .mp4 with Remotion - Ken Burns motion per
-  slide, crossfades, an intro title card, a progress bar, a page counter, and
-  optional word-synced highlight boxes. Use when the user hands you a lecture
-  folder (a deck PDF/PPTX plus N pairs of "<n>페이지.txt"/"<n>페이지.wav") and
-  asks for a video, or asks to add/extend narration-synced highlight effects
-  on an existing slide-based lecture video.
+  Turn a folder of {slide deck PDF/PPTX, per-page script .txt, per-page
+  narration .wav} into a narrated lecture .mp4 with Remotion - Ken Burns
+  motion per slide, animated slide transitions (push/zoom/wipe/crossfade), an
+  intro title card, light or dark theming to match the deck, a progress bar, a
+  page counter, and optional word-synced highlight boxes. Use when the user
+  hands you a lecture folder (a deck plus N pairs of
+  "<n>페이지.txt"/"<n>페이지.wav") and asks for a video, or asks to add
+  transition animations or narration-synced highlight effects to a
+  slide-based lecture video.
 license: MIT
 ---
 
@@ -33,7 +35,14 @@ Then, if `remotion.config.ts` has `Config.setRspack(true)`, remove that line
 ## Input contract
 
 A folder (anywhere, not necessarily inside the Remotion project) containing:
-- One slide deck as **PDF** (required — used to rasterize images).
+- One slide deck as **PDF** (required — used to rasterize images). If the
+  folder only has a `.pptx`, convert it first — PowerPoint is usually
+  installed on these Windows machines, and `32` is `ppSaveAsPDF`:
+  ```powershell
+  $ppt = New-Object -ComObject PowerPoint.Application
+  $pres = $ppt.Presentations.Open("<deck>.pptx", $true, $false, $false)
+  $pres.SaveAs("<deck>.pdf", 32); $pres.Close(); $ppt.Quit()
+  ```
 - Per page: `<lecture>_<n>페이지.txt` (narration script, may contain
   ElevenLabs `<break time="0.Ns" />` tags — informational only, not needed
   by this pipeline) and `<lecture>_<n>페이지.wav` (that page's narration
@@ -51,9 +60,12 @@ starting.
    cp -r template <remotion-project>/src/lecture
    ```
 
-2. **Extract slide images** (2x zoom keeps them sharp for zoom/pan):
+2. **Extract slide images.** Aim for roughly 1.5x the output width so the Ken
+   Burns zoom never upscales — check what you got and bump `--zoom` if the
+   deck's PDF pages are small (a 960x540pt deck needs `--zoom 3`, a
+   1280x720pt one is fine at the default 2):
    ```
-   python helpers/extract_slides.py "<deck>.pdf" "<scratch>/slides"
+   python helpers/extract_slides.py "<deck>.pdf" "<scratch>/slides" [--zoom 3]
    ```
 
 3. **Stage assets into the Remotion project + get durations**:
@@ -83,6 +95,8 @@ starting.
      introTopLabel: "SERIES LABEL",
      introTitleMain: "메인 타이틀",
      introTitleSub: "부제목",
+     // theme: LIGHT_THEME,         // white decks; omit for dark ones
+     // transitions: "crossfade",   // or ["pushLeft", "zoomIn", ...]; omit for the varied default
      // highlightsBySlide: { 0: [{ xPct, yPct, wPct, hPct, startSec, endSec }] },
    };
 
@@ -185,12 +199,39 @@ starting.
   ratio needs the math re-checked (crop amount, letterboxing) before
   trusting `object-fit: cover` to behave the same way.
 
-## Style defaults established for this template
+## Themes
 
-Dark navy background (`#1c2230`), muted gold accent (`#c2a878`), Arial —
-sampled from the first reference deck's own palette, see `template/theme.ts`.
-0.4s crossfades, ~4s intro card, subtle Ken Burns (scale 1 → 1.07, ±16px pan,
-alternating direction per slide), thin gold progress bar pinned to the
-bottom edge, "NN / total" page counter bottom-right. Edit `template/theme.ts`
-to change the palette for a different-looking series; keep new lectures in
-the *same* series visually consistent with each other.
+`template/theme.ts` ships two palettes, picked per lecture via
+`config.theme` (merged over `DARK_THEME`, so a partial override works too):
+
+- `DARK_THEME` (default) — dark navy bg `#1c2230`, muted gold accent, for
+  decks on a dark background.
+- `LIGHT_THEME` — white bg, orange accent `#e8871e`, dark navy title, for
+  decks on a white background.
+
+**Match the palette to the deck**, not to the previous lecture — the intro
+card background, progress bar, and page-counter chip all sit against the
+deck's own slides, so a dark card in front of a white deck reads as a
+mistake. Sample the deck's real accent color (probe a few pixels of an
+arrow/heading with PIL) rather than guessing. Keeping `introTopLabel`
+identical across a series is what ties the lectures together visually.
+
+## Transitions
+
+`config.transitions` controls how each slide enters: one type for all, an
+array for per-slide control, or omit it for the default varied rotation
+(`pushLeft → zoomIn → wipeRight → pushUp`, cycling). Types live in
+`template/transitions.ts`: `crossfade`, `pushLeft`, `pushUp`, `zoomIn`,
+`wipeRight`.
+
+The outgoing slide's exit is driven by the *incoming* slide's transition, so
+a push moves both slides together as one shove instead of a dissolve. Slide 1
+always crossfades in from the intro card, and the last slide always fades to
+black — those two are not configurable. Motion runs 20 frames (0.67s);
+shorter than ~15 and a push stops reading as motion.
+
+## Other style defaults
+
+~4s intro card, subtle Ken Burns (scale 1 → 1.07, ±16px pan, alternating
+direction per slide), thin accent progress bar pinned to the bottom edge,
+"NN / total" page counter bottom-right, Arial throughout.

@@ -1,7 +1,8 @@
 import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { THEME } from "./theme";
+import { LectureTheme } from "./theme";
 
 type Props = {
+  theme: LectureTheme;
   topLabel: string;
   titleMain: string;
   titleSub: string;
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export const IntroCard: React.FC<Props> = ({
+  theme,
   topLabel,
   titleMain,
   titleSub,
@@ -34,7 +36,7 @@ export const IntroCard: React.FC<Props> = ({
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: THEME.bg,
+        backgroundColor: theme.bg,
         justifyContent: "center",
         alignItems: "center",
         opacity,
@@ -57,10 +59,10 @@ export const IntroCard: React.FC<Props> = ({
             opacity: labelSpring,
           }}
         >
-          <div style={{ width: 48, height: 2, background: THEME.gold }} />
+          <div style={{ width: 48, height: 2, background: theme.accent }} />
           <span
             style={{
-              color: THEME.gold,
+              color: theme.accent,
               fontFamily: "Arial, sans-serif",
               fontSize: 28,
               fontWeight: 700,
@@ -69,12 +71,12 @@ export const IntroCard: React.FC<Props> = ({
           >
             {topLabel}
           </span>
-          <div style={{ width: 48, height: 2, background: THEME.gold }} />
+          <div style={{ width: 48, height: 2, background: theme.accent }} />
         </div>
 
         <div
           style={{
-            color: THEME.white,
+            color: theme.title,
             fontFamily: "Arial, sans-serif",
             fontSize: 96,
             fontWeight: 800,
@@ -88,7 +90,7 @@ export const IntroCard: React.FC<Props> = ({
         </div>
         <div
           style={{
-            color: THEME.gold,
+            color: theme.subtitle,
             fontFamily: "Arial, sans-serif",
             fontSize: 52,
             fontWeight: 700,

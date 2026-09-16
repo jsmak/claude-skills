@@ -1,5 +1,5 @@
 import { interpolate } from "remotion";
-import { FPS, THEME } from "./theme";
+import { FPS } from "./theme";
 
 export type HighlightCue = {
   xPct: number;
@@ -11,11 +11,20 @@ export type HighlightCue = {
 };
 
 type Props = HighlightCue & {
+  accent: string;
   frame: number; // global frame
   slideStart: number; // global frame where this slide's audio begins
 };
 
 const FADE = 8;
+
+/** `#rrggbb` -> `rgba(r,g,b,a)`; passes any other color string through. */
+const withAlpha = (color: string, alpha: number): string => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) return color;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 0xff}, ${(n >> 8) & 0xff}, ${n & 0xff}, ${alpha})`;
+};
 
 export const Highlight: React.FC<Props> = ({
   xPct,
@@ -24,6 +33,7 @@ export const Highlight: React.FC<Props> = ({
   hPct,
   startSec,
   endSec,
+  accent,
   frame,
   slideStart,
 }) => {
@@ -60,11 +70,10 @@ export const Highlight: React.FC<Props> = ({
         height: `${hPct * 100}%`,
         opacity,
         transform: `scale(${scaleIn * pulse})`,
-        border: `3px solid ${THEME.gold}`,
+        border: `3px solid ${accent}`,
         borderRadius: 14,
-        boxShadow:
-          "0 0 34px 4px rgba(194,168,120,0.55), inset 0 0 22px rgba(194,168,120,0.18)",
-        background: "rgba(194,168,120,0.10)",
+        boxShadow: `0 0 34px 4px ${withAlpha(accent, 0.55)}, inset 0 0 22px ${withAlpha(accent, 0.18)}`,
+        background: withAlpha(accent, 0.1),
       }}
     />
   );

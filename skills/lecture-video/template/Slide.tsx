@@ -1,9 +1,11 @@
 import { AbsoluteFill, Audio, Img, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
-import { THEME } from "./theme";
+import { LectureTheme } from "./theme";
 import { Highlight, HighlightCue } from "./Highlight";
+import { TransitionType, computeSceneStyle } from "./transitions";
 
 type Props = {
   lectureDir: string; // staticFile prefix, e.g. "lecture1" for public/lecture1/...
+  theme: LectureTheme;
   index: number; // 0-based
   total: number;
   start: number; // global frame this slide's audio begins
@@ -12,12 +14,15 @@ type Props = {
   fadeInEnd: number;
   fadeOutStart: number;
   fadeOutEnd: number;
+  enterTransition: TransitionType;
+  exitTransition: TransitionType;
   panDirection: 1 | -1;
   highlights?: HighlightCue[];
 };
 
 export const Slide: React.FC<Props> = ({
   lectureDir,
+  theme,
   index,
   total,
   start,
@@ -26,35 +31,44 @@ export const Slide: React.FC<Props> = ({
   fadeInEnd,
   fadeOutStart,
   fadeOutEnd,
+  enterTransition,
+  exitTransition,
   panDirection,
   highlights,
 }) => {
   const frame = useCurrentFrame();
 
-  const fadeIn = interpolate(frame, [fadeInStart, fadeInEnd], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
+  const scene = computeSceneStyle({
+    frame,
+    fadeInStart,
+    fadeInEnd,
+    fadeOutStart,
+    fadeOutEnd,
+    enter: enterTransition,
+    exit: exitTransition,
   });
-  const fadeOut = interpolate(frame, [fadeOutStart, fadeOutEnd], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const opacity = Math.min(fadeIn, fadeOut);
 
-  if (opacity <= 0) return null;
+  if (scene === null || scene.opacity <= 0) return null;
 
   const progress = Math.min(Math.max((frame - start) / duration, 0), 1);
-  const scale = interpolate(progress, [0, 1], [1, 1.07]);
+  const kenBurnsScale = interpolate(progress, [0, 1], [1, 1.07]);
   const translate = interpolate(progress, [0, 1], [0, 16 * panDirection]);
 
   const pageNum = String(index + 1).padStart(2, "0");
 
   return (
-    <AbsoluteFill style={{ backgroundColor: THEME.bg, opacity }}>
+    <AbsoluteFill
+      style={{
+        backgroundColor: theme.bg,
+        opacity: scene.opacity,
+        transform: scene.transform,
+        clipPath: scene.clipPath,
+      }}
+    >
       <AbsoluteFill style={{ overflow: "hidden" }}>
         <AbsoluteFill
           style={{
-            transform: `scale(${scale}) translateX(${translate}px)`,
+            transform: `scale(${kenBurnsScale}) translateX(${translate}px)`,
           }}
         >
           <Img
@@ -66,7 +80,13 @@ export const Slide: React.FC<Props> = ({
             }}
           />
           {highlights?.map((h, hi) => (
-            <Highlight key={hi} {...h} frame={frame} slideStart={start} />
+            <Highlight
+              key={hi}
+              {...h}
+              accent={theme.accent}
+              frame={frame}
+              slideStart={start}
+            />
           ))}
         </AbsoluteFill>
       </AbsoluteFill>
@@ -76,12 +96,12 @@ export const Slide: React.FC<Props> = ({
           position: "absolute",
           bottom: 28,
           right: 40,
-          color: THEME.muted,
+          color: theme.counterText,
           fontFamily: "Arial, sans-serif",
           fontSize: 22,
           fontWeight: 600,
           letterSpacing: 1,
-          background: "rgba(20,25,34,0.55)",
+          background: theme.counterBg,
           padding: "6px 16px",
           borderRadius: 20,
         }}
