@@ -1,6 +1,7 @@
 import { AbsoluteFill, Audio, Img, Sequence, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { LectureTheme } from "./theme";
 import { Highlight, HighlightCue } from "./Highlight";
+import { FrameSequence, FrameSequenceCue } from "./FrameSequence";
 import { TransitionType, computeSceneStyle } from "./transitions";
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
   exitTransition: TransitionType;
   panDirection: 1 | -1;
   highlights?: HighlightCue[];
+  frameSequences?: FrameSequenceCue[];
 };
 
 export const Slide: React.FC<Props> = ({
@@ -35,6 +37,7 @@ export const Slide: React.FC<Props> = ({
   exitTransition,
   panDirection,
   highlights,
+  frameSequences,
 }) => {
   const frame = useCurrentFrame();
 
@@ -79,6 +82,9 @@ export const Slide: React.FC<Props> = ({
               objectFit: "cover",
             }}
           />
+          {frameSequences?.map((fs, fi) => (
+            <FrameSequence key={`fs${fi}`} {...fs} frame={frame} slideStart={start} />
+          ))}
           {highlights?.map((h, hi) => (
             <Highlight
               key={hi}

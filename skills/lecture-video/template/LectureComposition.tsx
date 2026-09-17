@@ -4,6 +4,7 @@ import { IntroCard } from "./IntroCard";
 import { Slide } from "./Slide";
 import { ProgressBar } from "./ProgressBar";
 import { HighlightCue } from "./Highlight";
+import { FrameSequenceCue } from "./FrameSequence";
 import { TransitionType, resolveTransitions } from "./transitions";
 import {
   DARK_THEME,
@@ -33,6 +34,8 @@ export type LectureConfig = {
   transitions?: TransitionType | TransitionType[];
   /** optional word-synced highlight boxes, keyed by 0-based slide index */
   highlightsBySlide?: Record<number, HighlightCue[]>;
+  /** optional narration-scrubbed frame sequences (split GIFs), keyed by 0-based slide index */
+  frameSequencesBySlide?: Record<number, FrameSequenceCue[]>;
 };
 
 export type LectureProps = {
@@ -132,6 +135,7 @@ export const createLectureComposition = (
               exitTransition={isLast ? "crossfade" : transitions[i + 1]}
               panDirection={i % 2 === 0 ? 1 : -1}
               highlights={config.highlightsBySlide?.[i]}
+              frameSequences={config.frameSequencesBySlide?.[i]}
             />
           );
         })}

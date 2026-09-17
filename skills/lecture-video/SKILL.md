@@ -5,11 +5,12 @@ description: >-
   narration .wav} into a narrated lecture .mp4 with Remotion - Ken Burns
   motion per slide, animated slide transitions (push/zoom/wipe/crossfade), an
   intro title card, light or dark theming to match the deck, a progress bar, a
-  page counter, and optional word-synced highlight boxes. Use when the user
-  hands you a lecture folder (a deck plus N pairs of
+  page counter, optional word-synced highlight boxes, and animated GIFs split
+  into frames and played in step with the narration. Use when the user hands
+  you a lecture folder (a deck plus N pairs of
   "<n>페이지.txt"/"<n>페이지.wav") and asks for a video, or asks to add
-  transition animations or narration-synced highlight effects to a
-  slide-based lecture video.
+  transition animations, narration-synced highlights on code/diagram slides,
+  or a narration-synced GIF animation to a slide-based lecture video.
 license: MIT
 ---
 
@@ -18,8 +19,8 @@ license: MIT
 Assembles a slide deck plus per-page narration into an mp4 using Remotion.
 `template/` in this skill folder is a drop-in, config-driven Remotion module
 (no per-lecture file copying or editing needed) — `theme.ts`,
-`transitions.ts`, `Highlight.tsx`, `highlightCues.ts`, `IntroCard.tsx`,
-`Slide.tsx`, `ProgressBar.tsx`, `LectureComposition.tsx` (exports
+`transitions.ts`, `Highlight.tsx`, `highlightCues.ts`, `FrameSequence.tsx`,
+`IntroCard.tsx`, `Slide.tsx`, `ProgressBar.tsx`, `LectureComposition.tsx` (exports
 `createLectureComposition(config)` and `createLectureMetadataCalculator(config)`
 factories). If the project's `src/lecture` predates a template file, copy the
 missing file over before using it.
@@ -100,6 +101,7 @@ starting.
      // theme: LIGHT_THEME,         // white decks; omit for dark ones
      // transitions: "crossfade",   // or ["pushLeft", "zoomIn", ...]; omit for the varied default
      // highlightsBySlide: { 0: [{ xPct, yPct, wPct, hPct, startSec, endSec }] },
+     // frameSequencesBySlide: { 4: [{ dir, ext, frameCount, xPct, ..., segments }] },
    };
 
    <Composition
@@ -118,7 +120,13 @@ starting.
 5. **(Optional) Narration-synced highlight boxes** — see the Highlights
    section below. Only when the user asks. Worth *offering* when one slide
    runs several minutes of narration (a 5-10 min static slide is the case
-   this was built for), but don't add them speculatively.
+   this was built for), but don't add them speculatively. "Highlight the
+   code pages" means every slide the narration walks through code on, plus
+   the diagram/formula each code line maps to.
+
+5b. **(Optional) Animated GIF on a slide** — see Animated GIFs below. A deck
+   exported to PDF only keeps a GIF's first frame (often blank), so a GIF
+   the user points to has to be split and placed back over its slot.
 
 6. **Preview before full render.** Render a short frame range first
    (`npx remotion render <Id> out/preview.mp4 --frames=0-400`), pull a still
@@ -166,12 +174,14 @@ starting.
   timestamp precision (whole-page transcription already gives word-level
   timestamps) and adds real risk: re-stitched pauses sound unnatural and
   splice points can pop.
-- **Highlight boxes on code lines clip the comment line above.** The 10px
-  default padding pushes a tight code-line box up into the `# comment` right
-  above it, and the box edge visibly strikes through that text. Measure the
-  code line's top ~10px lower than the glyphs appear (or pass a smaller
-  `pad`) and re-check a still. Diagram blocks with empty space around them
-  don't have this problem.
+- **Don't eyeball code-line highlight coordinates — measure them.** Code
+  lines in these decks are only ~7-9px apart at 2880px. With the default
+  10px pad a box always strikes through the neighboring line; nudging by eye
+  just moves the strike-through from the comment above onto the code line
+  itself (both happened on lecture 8). Get exact line bands with
+  `helpers/text_bands.py`, use them as-is for y0/y1, and put code regions in
+  their own `defineHighlightRegions(..., 4)` set. Keep diagram blocks (which
+  have open space around them) in a separate set with the default pad.
 - **Keep a slide's last cue ending before its exit transition** — at least
   `TRANSITION_FRAMES` (0.67s) before the slide's audio ends, or the box is
   still fading while the slide pushes away.
@@ -224,6 +234,17 @@ diagram column, a code panel) cover a busy slide. If the pptx has real text
 boxes, python-pptx shape geometry is an alternative, but slides are often
 flattened images — check before relying on it.
 
+For **code lines**, the grid is only good for x-extents. Take y from exact
+text bands:
+```
+python helpers/text_bands.py public/<lectureId>/slides/page_02.png X0 Y0 X1 Y1
+#   8: 510-536  (h 26)  gap 7px     <- one printed line = one code line
+```
+Scan one code column at a time (x-range covering only that panel). Pale code
+colors (orange, light purple) on white need `--dark 200`; light text on a
+dark panel needs `--invert`. A band that's suspiciously tall is two lines
+merged by a graphic crossing the gap — split it by eye.
+
 **4. Define regions once, cue them by name** with `defineHighlightRegions`:
 ```tsx
 import { defineHighlightRegions } from "./lecture/highlightCues";
@@ -242,6 +263,16 @@ highlightsBySlide: {
   ],
 },
 ```
+Code lines go in a second set with a 4px pad (see Pitfalls), cued at the same
+times as the diagram set:
+```tsx
+const p2code = defineHighlightRegions(2880, 1620, {
+  codeFwdAttn:   [1175, 1288, 1855, 1345],   // y from text_bands.py
+}, 4);
+
+...p2code(["codeFwdAttn"], 133.3, 157.2),
+...p2(["attnBox", "diagSdpa"], 133.3, 157.2),
+```
 Regions named in one call share the time window — that's how a code line, its
 formula, and its diagram block light up together. Times are seconds within
 that slide's own audio. Start a cue ~0.2s before the phrase and end ~0.2s
@@ -256,6 +287,72 @@ npx remotion still <Id> <scratch>/hl_check.png --frame=<N>
 ```
 Check 3-4 cue moments spread across the slide with the Read tool. Look
 specifically at box edges against neighboring text — see Pitfalls.
+
+## Animated GIFs
+
+A GIF on a slide (a Google Research blog animation, a step-by-step diagram)
+is split into numbered frames and scrubbed through by the narration: it plays
+while the narrator describes a step, holds on that step while they explain
+it, and resumes on the next step. It sits inside the Ken Burns wrapper, so it
+moves with the slide.
+
+**1. Split it and get a contact sheet:**
+```
+python helpers/split_gif.py "<lecture folder>/anim.gif" public/<lectureId>/gif --sheet <scratch>/sheet.png --sheet-every 40
+```
+Prints frame count, fps, and aspect ratio. Frames are flattened onto white
+(`--bg` to change) as `frame_0000.jpg ...`. Read the sheet once: every tile
+is labeled with its frame index, which is what segments use.
+
+**2. Find the slot.** The PDF export shows the GIF's first frame — often
+blank, so the slot is just an empty frame/border. Measure its *inside* with
+`grid_crop.py` and inset a few px so a colored border stays visible. The
+frame uses `object-fit: contain`, so a slot whose aspect matches the GIF
+fills cleanly; otherwise it letterboxes on the slide background.
+
+**3. Transcribe the page and map steps to frame ranges.** Read the sentence
+timeline next to the contact sheet and pair each explained step with the
+frames that show it.
+
+**4. Configure segments** (`template/FrameSequence.tsx`):
+```tsx
+frameSequencesBySlide: {
+  4: [{
+    dir: "lecture8/gif", ext: "jpg", frameCount: 846,
+    xPct: 86 / 2880, yPct: 243 / 1620, wPct: 1361 / 2880, hPct: 1201 / 1620,
+    segments: [
+      // overview talk before the walkthrough: show the finished result
+      { startSec: 0,     endSec: 0.1,   fromFrame: 800, toFrame: 800 },
+      // "순서대로 살펴보겠습니다" -> restart from the empty canvas
+      { startSec: 49.0,  endSec: 52.8,  fromFrame: 0,   toFrame: 60 },
+      { startSec: 52.8,  endSec: 61.5,  fromFrame: 60,  toFrame: 95 },  // step 1
+      { startSec: 67.3,  endSec: 82.0,  fromFrame: 95,  toFrame: 170 }, // step 2
+      // ...
+      { startSec: 200.0, endSec: 216.0, fromFrame: 546, toFrame: 805 }, // last step
+    ],
+  }],
+},
+```
+Semantics: before the first segment, its `fromFrame` shows; inside a segment,
+frames interpolate linearly from `fromFrame` to `toFrame`; after a segment
+ends, its `toFrame` holds until the next segment starts. So gaps between
+segments are the pauses.
+
+Choices that worked:
+- **Don't leave the slot blank during intro talk.** If the narration talks
+  about the concept before walking the animation step by step, hold on the
+  finished frame first, then restart from frame 0 at the walkthrough.
+- **End on a complete frame, not the GIF's last frame.** Looping GIFs often
+  fade to blank at the end — stop the last segment before that (here 805 of
+  846) so the closing narration has something to look at.
+- **Play near real speed.** Stretching 60 GIF frames over ~4s (vs 3s native)
+  reads fine; much slower than 0.5x looks stuck, and compressing a long step
+  into a short phrase looks frantic — split the step instead.
+
+**5. Verify from the final render**, not just stills: pull frames at several
+segment times across the slide and put them on one sheet (crop the slot,
+label with slide-relative seconds) to confirm the animation state matches
+what the narration is saying at each point.
 
 ## Themes
 
