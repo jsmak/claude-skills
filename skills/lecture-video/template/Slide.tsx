@@ -93,17 +93,19 @@ export const Slide: React.FC<Props> = ({
 
       <div
         style={{
+          // tucked into the bottom edge: Ken Burns zoom pushes slide text
+          // outward, and a higher counter ends up on top of the last line
           position: "absolute",
-          bottom: 28,
-          right: 40,
+          bottom: 12,
+          right: 28,
           color: theme.counterText,
           fontFamily: "Arial, sans-serif",
-          fontSize: 22,
+          fontSize: 18,
           fontWeight: 600,
           letterSpacing: 1,
           background: theme.counterBg,
-          padding: "6px 16px",
-          borderRadius: 20,
+          padding: "4px 12px",
+          borderRadius: 16,
         }}
       >
         {pageNum} / {String(total).padStart(2, "0")}
