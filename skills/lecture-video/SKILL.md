@@ -17,10 +17,12 @@ license: MIT
 
 Assembles a slide deck plus per-page narration into an mp4 using Remotion.
 `template/` in this skill folder is a drop-in, config-driven Remotion module
-(no per-lecture file copying or editing needed) — `theme.ts`, `Highlight.tsx`,
-`IntroCard.tsx`, `Slide.tsx`, `ProgressBar.tsx`, `LectureComposition.tsx`
-(exports `createLectureComposition(config)` and
-`createLectureMetadataCalculator(config)` factories).
+(no per-lecture file copying or editing needed) — `theme.ts`,
+`transitions.ts`, `Highlight.tsx`, `highlightCues.ts`, `IntroCard.tsx`,
+`Slide.tsx`, `ProgressBar.tsx`, `LectureComposition.tsx` (exports
+`createLectureComposition(config)` and `createLectureMetadataCalculator(config)`
+factories). If the project's `src/lecture` predates a template file, copy the
+missing file over before using it.
 
 ## Prerequisite
 
@@ -113,40 +115,10 @@ starting.
    `<Composition>` registration. Multiple lectures can coexist in one
    Remotion project this way.
 
-5. **(Optional) Word-synced highlight boxes.** Only do this if the user
-   asks for it — it's manual, per-slide work, not something to do
-   speculatively for every page.
-   - Get word-level timestamps by transcribing the *existing* wav (no need
-     to regenerate audio, and no need for per-paragraph files — a whole
-     page's audio transcribes fine in one shot). The
-     [video-use](https://github.com/browser-use/video-use) skill's
-     `helpers/transcribe.py` does this via ElevenLabs Scribe:
-     ```
-     export PYTHONIOENCODING=utf-8   # required on Windows, see Pitfalls
-     python ~/Developer/video-use/helpers/transcribe.py "public/<lectureId>/audio/page_01.wav" --language ko
-     ```
-     Requires a valid `ELEVENLABS_API_KEY` in `~/Developer/video-use/.env`
-     (`sk_...`, verify with
-     `curl -H "xi-api-key: $KEY" https://api.elevenlabs.io/v1/user` → 200).
-     Output lands in `.../audio/edit/transcripts/page_01.json`, a `words`
-     array of `{text, start, end, type}` in seconds.
-   - Find the narration phrase that matches what you want to highlight.
-     **The spoken narration is usually a paraphrase of the on-slide text,
-     not a verbatim match** — search the transcript's `text` field by
-     eye/keyword, don't try exact string-matching against the slide.
-   - Find the on-screen pixel box for that content. If the source pptx has
-     real text boxes (check `python-pptx`: `shape.has_text_frame` /
-     `shape.shape_type` — see Pitfalls), read positions straight off the
-     shape geometry. If the slide is a flattened image (every shape is
-     `PICTURE`), crop-and-view the region with PIL + the Read tool to
-     eyeball pixel bounds:
-     ```python
-     from PIL import Image
-     Image.open("page_01.png").crop((x0, y0, x1, y1)).save("check.png")
-     ```
-   - Add a `HighlightCue` to `highlightsBySlide` in the config:
-     `{xPct, yPct, wPct, hPct, startSec, endSec}` — percentages of the full
-     slide image, `startSec`/`endSec` relative to that slide's own audio.
+5. **(Optional) Narration-synced highlight boxes** — see the Highlights
+   section below. Only when the user asks. Worth *offering* when one slide
+   runs several minutes of narration (a 5-10 min static slide is the case
+   this was built for), but don't add them speculatively.
 
 6. **Preview before full render.** Render a short frame range first
    (`npx remotion render <Id> out/preview.mp4 --frames=0-400`), pull a still
@@ -171,10 +143,12 @@ starting.
   generators, screenshots, etc.) have no extractable text layer.** Check
   with `python-pptx` early: `shape.has_text_frame` / `shape.shape_type` — if
   every shape is `PICTURE`, there is no shape geometry to read, and highlight
-  coordinates must be found by visual inspection instead of automated
-  extraction. If the user is designing new slides and wants automatable
-  highlights, tell them to build with real PowerPoint text boxes, not
-  pasted-in images.
+  coordinates come from `grid_crop.py` instead.
+- **Decks can mix dark and light slides.** Sample the corners of *every*
+  slide, not just slide 1. For a mixed deck, match the intro card `bg` to
+  slide 1 (it hands off to it), and pick an accent and counter chip that
+  read on both backgrounds (a mid-saturation blue plus a semi-opaque dark
+  chip with light text works on white and on dark).
 - **Audio must be wrapped in its own `<Sequence from durationInFrames
   layout="none">`** inside each Slide component. Without it, `<Audio>`
   plays from the timeline's global frame 0, not from when that slide
@@ -192,12 +166,96 @@ starting.
   timestamp precision (whole-page transcription already gives word-level
   timestamps) and adds real risk: re-stitched pauses sound unnatural and
   splice points can pop.
+- **Highlight boxes on code lines clip the comment line above.** The 10px
+  default padding pushes a tight code-line box up into the `# comment` right
+  above it, and the box edge visibly strikes through that text. Measure the
+  code line's top ~10px lower than the glyphs appear (or pass a smaller
+  `pad`) and re-check a still. Diagram blocks with empty space around them
+  don't have this problem.
+- **Keep a slide's last cue ending before its exit transition** — at least
+  `TRANSITION_FRAMES` (0.67s) before the slide's audio ends, or the box is
+  still fading while the slide pushes away.
+- **Adding highlights after starting a full render means restarting it.**
+  Stop the background render task, then kill the orphaned Remotion browsers
+  it leaves behind (`taskkill //F //IM chrome-headless-shell.exe` on Windows)
+  before starting stills or a new render — otherwise they compete for CPU.
 - **Check slide aspect ratio before assuming 1920x1080 `object-fit: cover`
   needs no thought.** The reference deck was 1280x720 (16:9) → rendered at
   2x zoom = 2561x1440, which maps to 1920x1080 with essentially no crop
   since the aspect ratios are near-identical. A deck with a different aspect
   ratio needs the math re-checked (crop amount, letterboxing) before
   trusting `object-fit: cover` to behave the same way.
+
+## Highlights
+
+Glowing boxes that appear over a region of a slide while the narration is
+talking about it, and follow the Ken Burns zoom/pan. The work is: find *when*
+from the transcript, find *where* from the slide, pair them.
+
+**1. Transcribe the page's existing wav** (no re-generation, no splitting):
+```
+export PYTHONIOENCODING=utf-8
+python ~/Developer/video-use/helpers/transcribe.py "public/<lectureId>/audio/page_01.wav" --language ko
+```
+Needs a valid `ELEVENLABS_API_KEY` (`sk_...`) in `~/Developer/video-use/.env`.
+Output: `public/<lectureId>/audio/edit/transcripts/page_01.json`. A 10-minute
+page takes ~15s. Scribe also normalizes the phonetic TTS script back to real
+spelling (엘엘엠 → LLM, 이천 십칠년 → 2017년), so read the transcript, not the
+`.txt` script.
+
+**2. Read it as a timeline:**
+```
+python helpers/transcript_sentences.py <transcript.json> -o <scratch>/sentences.txt
+python helpers/transcript_sentences.py <transcript.json> --words 144 153
+```
+The first gives one `[start-end] sentence` line per sentence — Read that file
+and map sentences to what they're explaining. Use `--words` when one sentence
+covers two regions ("4번 FFN을 거쳐 다시 5번 Add & Norm") to find the split
+point. Lecture narration usually makes two passes over a dense slide (a
+diagram overview, then a code walkthrough); cue both passes.
+
+**3. Measure regions on the slide PNG** (the same `page_NN.png` in `public/`):
+```
+python helpers/grid_crop.py public/<lectureId>/slides/page_01.png <scratch>/grid.png X0 Y0 X1 Y1
+```
+Grid labels are absolute pixel coordinates of the slide PNG, so numbers read
+off the crop go straight into the config. Two or three generous crops (a
+diagram column, a code panel) cover a busy slide. If the pptx has real text
+boxes, python-pptx shape geometry is an alternative, but slides are often
+flattened images — check before relying on it.
+
+**4. Define regions once, cue them by name** with `defineHighlightRegions`:
+```tsx
+import { defineHighlightRegions } from "./lecture/highlightCues";
+
+// pixels of the slide PNG (e.g. 2880x1620 for a --zoom 3 960x540 deck)
+const p1 = defineHighlightRegions(2880, 1620, {
+  diagFfn:    [105, 1000, 485, 1085],
+  formulaFfn: [855, 1285, 1350, 1320],
+  codeFfn:    [1480, 1317, 2340, 1350],
+});
+
+highlightsBySlide: {
+  0: [
+    ...p1(["diagFfn", "formulaFfn"], 144.9, 148.9),          // overview pass
+    ...p1(["codeFfn", "diagFfn", "formulaFfn"], 486.2, 564.2), // code pass
+  ],
+},
+```
+Regions named in one call share the time window — that's how a code line, its
+formula, and its diagram block light up together. Times are seconds within
+that slide's own audio. Start a cue ~0.2s before the phrase and end ~0.2s
+after, and name regions by *what they are* (`codeFwdNorm1`), not by marker
+number, so the cue list reads like the lecture.
+
+**5. Verify with stills before rendering.** Global frame =
+`introFrames + sum(previous slides' frames) + sec * 30`; for slide 1 that's
+`120 + sec * 30`.
+```
+npx remotion still <Id> <scratch>/hl_check.png --frame=<N>
+```
+Check 3-4 cue moments spread across the slide with the Read tool. Look
+specifically at box edges against neighboring text — see Pitfalls.
 
 ## Themes
 
