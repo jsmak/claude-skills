@@ -18,6 +18,12 @@ type Props = {
   enterTransition: TransitionType;
   exitTransition: TransitionType;
   panDirection: 1 | -1;
+  /**
+   * Slow zoom + pan across the slide. Off by default: on dense decks it pushes
+   * content (and any highlight boxes over it) past the frame edge by the end of
+   * a long page.
+   */
+  kenBurns?: boolean;
   highlights?: HighlightCue[];
   frameSequences?: FrameSequenceCue[];
 };
@@ -36,6 +42,7 @@ export const Slide: React.FC<Props> = ({
   enterTransition,
   exitTransition,
   panDirection,
+  kenBurns = false,
   highlights,
   frameSequences,
 }) => {
@@ -54,8 +61,10 @@ export const Slide: React.FC<Props> = ({
   if (scene === null || scene.opacity <= 0) return null;
 
   const progress = Math.min(Math.max((frame - start) / duration, 0), 1);
-  const kenBurnsScale = interpolate(progress, [0, 1], [1, 1.07]);
-  const translate = interpolate(progress, [0, 1], [0, 16 * panDirection]);
+  const kenBurnsScale = kenBurns ? interpolate(progress, [0, 1], [1, 1.07]) : 1;
+  const translate = kenBurns
+    ? interpolate(progress, [0, 1], [0, 16 * panDirection])
+    : 0;
 
   const pageNum = String(index + 1).padStart(2, "0");
 

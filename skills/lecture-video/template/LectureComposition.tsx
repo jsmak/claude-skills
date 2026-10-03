@@ -32,6 +32,12 @@ export type LectureConfig = {
    * is always a crossfade). Omit for a varied default rotation.
    */
   transitions?: TransitionType | TransitionType[];
+  /**
+   * Slow zoom/pan over each slide. Off by default: a dense deck ends a long
+   * page 7% zoomed in, which crops the edges and carries highlight boxes out
+   * of frame. Only turn it on for sparse slides with short narration.
+   */
+  kenBurns?: boolean;
   /** optional word-synced highlight boxes, keyed by 0-based slide index */
   highlightsBySlide?: Record<number, HighlightCue[]>;
   /** optional narration-scrubbed frame sequences (split GIFs), keyed by 0-based slide index */
@@ -134,6 +140,7 @@ export const createLectureComposition = (
               // moves both together; the last slide always fades to black
               exitTransition={isLast ? "crossfade" : transitions[i + 1]}
               panDirection={i % 2 === 0 ? 1 : -1}
+              kenBurns={config.kenBurns ?? false}
               highlights={config.highlightsBySlide?.[i]}
               frameSequences={config.frameSequencesBySlide?.[i]}
             />

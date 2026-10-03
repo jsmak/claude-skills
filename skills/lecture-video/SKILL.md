@@ -2,8 +2,8 @@
 name: lecture-video
 description: >-
   Turn a folder of {slide deck PDF/PPTX, per-page script .txt, per-page
-  narration .wav} into a narrated lecture .mp4 with Remotion - Ken Burns
-  motion per slide, animated slide transitions (push/zoom/wipe/crossfade), an
+  narration .wav} into a narrated lecture .mp4 with Remotion - optional Ken
+  Burns motion per slide, animated slide transitions (push/zoom/wipe/crossfade), an
   intro title card, light or dark theming to match the deck, a progress bar, a
   page counter, optional word-synced highlight boxes, and animated GIFs split
   into frames and played in step with the narration. Use when the user hands
@@ -387,6 +387,16 @@ shorter than ~15 and a push stops reading as motion.
 
 ## Other style defaults
 
-~4s intro card, subtle Ken Burns (scale 1 → 1.07, ±16px pan, alternating
-direction per slide), thin accent progress bar pinned to the bottom edge,
-"NN / total" page counter bottom-right, Arial throughout.
+~4s intro card, static slides (Ken Burns off, see below), thin accent
+progress bar pinned to the bottom edge, "NN / total" page counter
+bottom-right, Arial throughout.
+
+**Ken Burns is off by default** — `config.kenBurns: true` restores the slow
+zoom (scale 1 → 1.07) and ±16px pan. It defaults off because it broke real
+lectures: on a dense deck with minutes of narration per page, the end of a
+page sits 7% zoomed in, so content near the edges is cropped out of frame and
+a highlight box over it rides off-screen with the slide. The box stays
+correctly placed *on the slide* — the slide itself is what walks out of view,
+which makes it look like the highlight is misaligned. Only enable it for
+sparse slides with short narration, and never on pages carrying highlights
+near the edges.
