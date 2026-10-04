@@ -5,7 +5,9 @@ description: >-
   narration .wav} into a narrated lecture .mp4 with Remotion - optional Ken
   Burns motion per slide, animated slide transitions (push/zoom/wipe/crossfade), an
   intro title card, light or dark theming to match the deck, a progress bar, a
-  page counter, optional word-synced highlight boxes, and animated GIFs split
+  page counter, optional word-synced highlight boxes proofed as PNGs the
+  person corrects with a red rectangle before any video is rendered, and
+  animated GIFs split
   into frames and played in step with the narration. Use when the user hands
   you a lecture folder (a deck plus N pairs of
   "<n>페이지.txt"/"<n>페이지.wav") and asks for a video, or asks to add
@@ -128,12 +130,19 @@ starting.
    exported to PDF only keeps a GIF's first frame (often blank), so a GIF
    the user points to has to be split and placed back over its slot.
 
-6. **Preview before full render.** Render a short frame range first
+6. **Proof gate — with highlights, this is not optional.** Render a still of
+   every cue into `<lecture folder>/proofs`, review them yourself, fix what
+   you find, then hand them to the person and **stop**. Render the video only
+   once they have marked the wrong boxes in red or said the boxes are right.
+   See Highlight proofs. Rendering first and fixing afterwards costs a
+   10-20 min render per round and is what this gate exists to prevent.
+
+7. **Preview before full render.** Render a short frame range first
    (`npx remotion render <Id> out/preview.mp4 --frames=0-400`), pull a still
    with `ffmpeg -ss <t> -i out/preview.mp4 -frames:v 1 check.png` and view it
    with Read, before committing to a full 10-20 min render.
 
-7. **Full render**: `npx remotion render <Id> "out/<title>.mp4"`.
+8. **Full render**: `npx remotion render <Id> "out/<title>.mp4"`.
 
 ## Pitfalls (all hit and fixed once already — don't rediscover them)
 
@@ -182,6 +191,10 @@ starting.
   `helpers/text_bands.py`, use them as-is for y0/y1, and put code regions in
   their own `defineHighlightRegions(..., 4)` set. Keep diagram blocks (which
   have open space around them) in a separate set with the default pad.
+- **Don't render the video to find out whether the highlights landed.** A
+  misplaced box is invisible in the config and obvious on screen, and the
+  render costs 10-20 minutes. Proof every cue as a still first and have the
+  person mark what is wrong — see Highlight proofs.
 - **Keep a slide's last cue ending before its exit transition** — at least
   `TRANSITION_FRAMES` (0.67s) before the slide's audio ends, or the box is
   still fading while the slide pushes away.
@@ -279,14 +292,97 @@ that slide's own audio. Start a cue ~0.2s before the phrase and end ~0.2s
 after, and name regions by *what they are* (`codeFwdNorm1`), not by marker
 number, so the cue list reads like the lecture.
 
-**5. Verify with stills before rendering.** Global frame =
+**5. Proof every cue before rendering — see Highlight proofs below.** A
+spot-check of 3-4 frames is not enough: a box that is 40px off reads fine in
+a thumbnail and is obvious in the finished video, and by then the render is
+15 minutes gone. Render one still per cue, look at all of them, and let the
+person correct what you missed.
+
+For a one-off check, the global frame is
 `introFrames + sum(previous slides' frames) + sec * 30`; for slide 1 that's
-`120 + sec * 30`.
+`120 + sec * 30`:
 ```
 npx remotion still <Id> <scratch>/hl_check.png --frame=<N>
 ```
-Check 3-4 cue moments spread across the slide with the Read tool. Look
-specifically at box edges against neighboring text — see Pitfalls.
+
+## Highlight proofs
+
+Highlights are measured from the slide PNG, so a wrong coordinate looks right
+in the config and only shows up on screen. **Every cue gets proofed as a still
+and signed off before the video is rendered** — the render is the expensive
+half, and a box that is 200px out is invisible in the config, invisible in a
+thumbnail, and glaring in the finished video.
+
+**Stage 1 — render a still per cue.** Transcribe the cue list into a JSON
+file as you write the config (same slide indices and seconds), then:
+```
+python helpers/proof_highlights.py \
+  --project <remotion project> --composition Lecture23 \
+  --lecture-dir public/lecture23 --cues <scratch>/cues23.json \
+  --out "C:/TRANSFORMER/23강/proofs"
+```
+Write them into the lecture folder, not the scratchpad: the person has to open
+and mark them. It writes `NN_pSS_<names>.png` per cue, `sheet_pNN.png` per
+slide, `sheet_all.png`, and `index.md` listing every proof with its cue.
+```json
+[
+  {"slide": 0, "names": ["codeFwd", "diagAttn"], "start": 12.3, "end": 18.0},
+  {"slide": 2, "names": ["table"],               "start":  4.0, "end":  9.5}
+]
+```
+It samples 0.8s into each cue and computes the frames from the wavs itself.
+`--slides 0,2` and `--only 3,4,9` narrow a re-proof after a fix.
+
+Read the sheets yourself first and fix everything you can see — the person is
+the second pair of eyes, not the first. Then hand over the folder (send the
+per-slide sheets inline, and name the folder so they can open the full-size
+files) and ask them to **draw a red rectangle where a box should actually
+sit** — any editor, hollow or filled, one rectangle per wrong box, leaving the
+correct ones alone. Then wait. Do not start the render while proofs are out
+for review.
+
+Worth saying plainly to the person, since it is their half of the loop:
+틀린 강조만 그 PNG 위에 붉은 사각형으로 표시해서 주세요. 맞는 것은 그대로
+두시면 됩니다.
+
+**Stage 2 — read the marks back.** For each returned file:
+```
+python helpers/read_markup.py <marked.png> \
+  --original <scratch>/proofs23/01_p05_rowSameDim.png \
+  --slide public/lecture23/slides/page_05.png --pad 4
+```
+It prints each rectangle as `region : [x0, y0, x1, y1]`, already in slide-PNG
+pixels and already shrunk by the pad of the set it belongs in, so it drops
+straight into `defineHighlightRegions`. Pass the pad of the set you are
+editing (4 for code lines, 10 for diagram blocks) or the box comes back off
+by that much.
+
+- **Always pass `--original`.** Decks have red of their own — arrows, dashed
+  outlines, warning boxes — and the diff against the unmarked proof is what
+  keeps those from being read as marks.
+- Marks drawn on the slide PNG instead of a proof work too:
+  `--image-space slide`. A frame captured from the video works as well, as
+  long as Ken Burns is off — then it maps 1:1 to the slide and the slide PNG
+  resized to the frame size serves as the `--original`.
+- A mark says *where the box belongs*, not how much to nudge it. Take the
+  coordinates as given; do not re-derive them by eye.
+- **Snap the corrected box to the content** with `snap_box.py` (below) before
+  writing it in — the mark is drawn by hand and lands a few px off the glyphs.
+- Re-proof the cues you changed (`--only`), show those, and get a yes.
+
+Only then render the video.
+
+**Measure regions with `snap_box.py`, not by eye.** Reading coordinates off a
+scaled-down view and multiplying is how boxes end up 100-300px out — it has
+happened on a shipped lecture (a title box that cut "ResNet" off its own
+heading). Give a generous box around the target; it returns the exact ink
+bounds:
+```
+python helpers/snap_box.py public/lecture23/slides/page_04.png \
+  --box 1900 140 2520 275 --pad 10        # --invert for light-on-dark
+```
+`region` is what goes into `defineHighlightRegions`; `renders` shows the box
+that will actually be drawn once the set's pad is added.
 
 ## Animated GIFs
 
