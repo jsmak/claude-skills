@@ -300,7 +300,8 @@ person correct what you missed.
 
 For a one-off check, the global frame is
 `introFrames + sum(previous slides' frames) + sec * 30`; for slide 1 that's
-`120 + sec * 30`:
+`120 + sec * 30`. With `audioLeadIn` set, add `leadIn * 30` once per slide
+up to and including this one (and pass `--lead-in` to `proof_highlights.py`):
 ```
 npx remotion still <Id> <scratch>/hl_check.png --frame=<N>
 ```
@@ -486,6 +487,13 @@ shorter than ~15 and a push stops reading as motion.
 ~4s intro card, static slides (Ken Burns off, see below), thin accent
 progress bar pinned to the bottom edge, "NN / total" page counter
 bottom-right, Arial throughout.
+
+**Pause before each page's narration** — `config.audioLeadIn` (seconds,
+default 0). With 0 the voice starts the instant a transition settles, which
+reads as rushed; JS asked for `0.7` on the deep-learning series. The slide
+stays up for lead-in + audio, so the video grows by `pageCount * leadIn`.
+Cue times are relative to each page's audio, so highlights and GIF segments
+need no change.
 
 **Ken Burns is off by default** — `config.kenBurns: true` restores the slow
 zoom (scale 1 → 1.07) and ±16px pan. It defaults off because it broke real

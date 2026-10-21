@@ -50,14 +50,16 @@ def wav_duration(path: Path) -> float:
     return float(out)
 
 
-def slide_starts(audio_dir: Path, page_count: int, intro_frames: int, fps: int):
-    """Global start frame of each slide, matching LectureComposition's layout."""
+def slide_starts(audio_dir: Path, page_count: int, intro_frames: int, fps: int,
+                 lead_in: float = 0.0):
+    """Global frame each slide's audio starts, matching LectureComposition's layout."""
+    lead = round(lead_in * fps)
     starts = []
     cursor = intro_frames
     for i in range(1, page_count + 1):
-        starts.append(cursor)
+        starts.append(cursor + lead)
         dur = wav_duration(audio_dir / f"page_{i:02d}.wav")
-        cursor += round(dur * fps)
+        cursor += lead + round(dur * fps)
     return starts
 
 
@@ -76,6 +78,8 @@ def main():
     ap.add_argument("--out", required=True, help="directory for the proof PNGs")
     ap.add_argument("--intro-frames", type=int, default=120)
     ap.add_argument("--fps", type=int, default=30)
+    ap.add_argument("--lead-in", type=float, default=0.0,
+                    help="the lecture's audioLeadIn, in seconds")
     ap.add_argument("--offset", type=float, default=0.8,
                     help="seconds into the cue to sample (clamped to its length)")
     ap.add_argument("--slides", default="",
@@ -95,7 +99,7 @@ def main():
     page_count = max(c["slide"] for c in cues) + 1
     pages_on_disk = len(list(audio_dir.glob("page_*.wav")))
     starts = slide_starts(audio_dir, max(page_count, pages_on_disk),
-                          args.intro_frames, args.fps)
+                          args.intro_frames, args.fps, args.lead_in)
 
     want_slides = {int(s) for s in args.slides.split(",") if s.strip()}
     want_cues = {int(s) for s in args.only.split(",") if s.strip()}

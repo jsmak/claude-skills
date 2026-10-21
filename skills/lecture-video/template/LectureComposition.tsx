@@ -24,6 +24,13 @@ export type LectureConfig = {
   introTitleSub: string;
   /** frames the intro card holds before slide 1 starts. Default 120 (4s @ 30fps). */
   introFrames?: number;
+  /**
+   * Seconds of silence between a slide finishing its entrance and its
+   * narration starting, so the voice doesn't land the instant the page
+   * turns. Default 0 (back to back). Highlight/GIF cue times stay relative
+   * to the page's audio, so they need no change when this is set.
+   */
+  audioLeadIn?: number;
   /** palette override, merged over DARK_THEME. Pass LIGHT_THEME for white decks. */
   theme?: Partial<LectureTheme>;
   /**
@@ -49,11 +56,15 @@ export type LectureProps = {
   audioStarts: number[];
 };
 
+/** config.audioLeadIn in whole frames. */
+const leadInFrames = (config: LectureConfig) =>
+  Math.round((config.audioLeadIn ?? 0) * FPS);
+
 /**
  * Builds the calculateMetadata function for a lecture: probes each page's
- * wav duration and lays out frame-accurate start times, back to back, with
- * no gaps (transitions are a purely visual overlap handled in Slide, audio
- * never overlaps).
+ * wav duration and lays out frame-accurate start times. Each slide is on
+ * screen for its lead-in plus its audio; transitions are a purely visual
+ * overlap handled in Slide, and audio never overlaps.
  */
 export const createLectureMetadataCalculator = (
   config: LectureConfig,
@@ -72,11 +83,12 @@ export const createLectureMetadataCalculator = (
 
     const slideFrames = durationsSec.map((sec) => Math.round(sec * FPS));
 
+    const leadIn = leadInFrames(config);
     const audioStarts: number[] = [];
     let cursor = introFrames;
     for (const frames of slideFrames) {
-      audioStarts.push(cursor);
-      cursor += frames;
+      audioStarts.push(cursor + leadIn);
+      cursor += leadIn + frames;
     }
 
     const durationInFrames = cursor + EXTRA_TAIL;
@@ -94,6 +106,7 @@ export const createLectureComposition = (
 ): React.FC<LectureProps> => {
   const theme: LectureTheme = { ...DARK_THEME, ...config.theme };
   const transitions = resolveTransitions(config.pageCount, config.transitions);
+  const leadIn = leadInFrames(config);
 
   const LectureComposition: React.FC<LectureProps> = ({
     slideFrames,
@@ -102,6 +115,8 @@ export const createLectureComposition = (
     const lastIndex = config.pageCount - 1;
     const videoEnd =
       audioStarts[lastIndex] + slideFrames[lastIndex] + EXTRA_TAIL;
+    // frame each slide's entrance finishes (its narration starts leadIn later)
+    const shownAt = audioStarts.map((s) => s - leadIn);
 
     return (
       <AbsoluteFill style={{ backgroundColor: theme.bg }}>
@@ -110,17 +125,17 @@ export const createLectureComposition = (
           topLabel={config.introTopLabel}
           titleMain={config.introTitleMain}
           titleSub={config.introTitleSub}
-          fadeOutStart={audioStarts[0] - TRANSITION_FRAMES}
-          fadeOutEnd={audioStarts[0]}
+          fadeOutStart={shownAt[0] - TRANSITION_FRAMES}
+          fadeOutEnd={shownAt[0]}
         />
 
         {slideFrames.map((duration, i) => {
           const start = audioStarts[i];
           const isLast = i === lastIndex;
-          const fadeOutEnd = isLast ? videoEnd : audioStarts[i + 1];
+          const fadeOutEnd = isLast ? videoEnd : shownAt[i + 1];
           const fadeOutStart = isLast
             ? videoEnd - EXTRA_TAIL
-            : audioStarts[i + 1] - TRANSITION_FRAMES;
+            : shownAt[i + 1] - TRANSITION_FRAMES;
 
           return (
             <Slide
@@ -131,8 +146,8 @@ export const createLectureComposition = (
               total={config.pageCount}
               start={start}
               duration={duration}
-              fadeInStart={start - TRANSITION_FRAMES}
-              fadeInEnd={start}
+              fadeInStart={shownAt[i] - TRANSITION_FRAMES}
+              fadeInEnd={shownAt[i]}
               fadeOutStart={fadeOutStart}
               fadeOutEnd={fadeOutEnd}
               enterTransition={transitions[i]}
