@@ -12,9 +12,18 @@ description: >-
   you a lecture folder (a deck plus N pairs of
   "<n>페이지.txt"/"<n>페이지.wav") and asks for a video, or asks to add
   transition animations, narration-synced highlights on code/diagram slides,
-  or a narration-synced GIF animation to a slide-based lecture video.
+  or a narration-synced GIF animation to a slide-based lecture video. Also
+  covers Jupyter/Colab notebooks: when the user hands you an .ipynb with a
+  rough spoken script and wants an explainer video ("이 쥬피터 노트북을
+  설명하는 동영상을 만들고 싶습니다", 대본 다듬기, 일레븐랩스 음성, 코랩 화면
+  캡처, 강조/자막) — see NOTEBOOK.md.
 license: MIT
 ---
+
+> **Notebook (.ipynb) instead of a slide deck?** Follow `NOTEBOOK.md` and the
+> files in `notebook/`: script polish, per-scene ElevenLabs audio, Colab
+> captures, measured line highlights with zoom and captions, still proofs,
+> render + mux. The rest of this file is the slide pipeline.
 
 # Lecture Video
 

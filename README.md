@@ -17,7 +17,7 @@ Claude Code / Cowork 에서 쓰는 개인 스킬 모음 마켓플레이스입니
 |---|---|
 | `arxiv-korean-translation` | arXiv 논문을 Abstract~Conclusion까지 한국어 경어체로 전문 번역 |
 | `obsidian-todo-sync` | Obsidian 볼트의 체크박스 할 일을 수집해 `TODO.md`로 정리 |
-| `lecture-video` | 슬라이드 + 페이지별 대본/음성을 Remotion으로 전환 애니메이션·나레이션 동기화 코드 강조·GIF 프레임 동기화가 들어간 강의 mp4로 제작 |
+| `lecture-video` | 슬라이드 + 페이지별 대본/음성을 Remotion으로 전환 애니메이션·나레이션 동기화 코드 강조·GIF 프레임 동기화가 들어간 강의 mp4로 제작. **주피터/코랩 노트북(.ipynb)** 도 지원: 대본 교정 → 장면별 ElevenLabs 음성 → 코랩 화면 캡처 → 코드/출력 줄 강조·확대·자막 → 확인용 이미지 → 렌더링 (`NOTEBOOK.md`) |
 
 설치 후 `/jsmak-toolkit:arxiv-korean-translation` 처럼 플러그인 이름이 앞에 붙습니다.
 
@@ -64,7 +64,9 @@ claude-skills/
 │   ├── arxiv-korean-translation/SKILL.md
 │   ├── lecture-video/
 │   │   ├── SKILL.md
+│   │   ├── NOTEBOOK.md       # .ipynb → 강의 영상 절차
 │   │   ├── helpers/          # PDF→PNG, asset staging scripts
+│   │   ├── notebook/         # 코랩 캡처·레이아웃 측정·장면 데이터·확인용 이미지·음성 합치기 + Remotion 템플릿
 │   │   └── template/         # drop-in Remotion module (config-driven)
 │   └── obsidian-todo-sync/SKILL.md
 ├── .gitattributes
