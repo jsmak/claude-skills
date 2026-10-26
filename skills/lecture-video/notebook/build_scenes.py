@@ -30,6 +30,13 @@ def width(text):
     return sum(2 if unicodedata.east_asian_width(ch) in "WF" else 1 for ch in text)
 
 
+def capture_size(path):
+    """Width/height of a capture PNG, read from its IHDR chunk (no Pillow needed)."""
+    with open(path, "rb") as f:
+        head = f.read(24)
+    return {"width": int.from_bytes(head[16:20], "big"), "height": int.from_bytes(head[20:24], "big")}
+
+
 def duration(path):
     r = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
                         "-of", "csv=p=0", str(path)], capture_output=True, text=True, check=True)
@@ -126,7 +133,10 @@ def main():
                        "beats": beats})
 
     data = {"id": spec["id"], "title": spec.get("title", ""), "summary": spec.get("summary", []),
-            "thanksAt": spec.get("thanksAt"), "scenes": scenes}
+            "thanksAt": spec.get("thanksAt"), "scenes": scenes,
+            "capture": capture_size(rel(spec["imageDir"]) / f"{next(iter(captures))}.png")}
+    if "captionPlaces" in spec:  # e.g. ["top", "middle"] to stay clear of YouTube subtitles
+        data["captionPlaces"] = spec["captionPlaces"]
     out = remotion / "src" / "data" / f"{spec['id']}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")

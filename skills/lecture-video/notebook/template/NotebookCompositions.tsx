@@ -13,7 +13,10 @@ const summaryFor = (lecture: NotebookLecture, s: SceneData) =>
 
 const SceneClip: React.FC<{ lecture: NotebookLecture; scene: SceneData }> = ({ lecture, scene }) => {
   const frame = useCurrentFrame();
-  return <SceneView assetDir={lecture.id} scene={scene} t={frame / FPS} summary={summaryFor(lecture, scene)} />;
+  return (
+    <SceneView assetDir={lecture.id} scene={scene} t={frame / FPS} summary={summaryFor(lecture, scene)}
+      capture={lecture.capture} captionPlaces={lecture.captionPlaces} />
+  );
 };
 
 const Lecture: React.FC<{ lecture: NotebookLecture }> = ({ lecture }) => {
@@ -40,7 +43,10 @@ const Preview: React.FC<{ lecture: NotebookLecture }> = ({ lecture }) => {
   const { s, i, b } = beats[frame];
   const summary = summaryFor(lecture, s);
   const t = summary ? Math.max(settledTime(b), (summary.thanksAt ?? 0) + 1.2, summary.items.length * 0.9 + 1.5) : settledTime(b);
-  return <SceneView assetDir={lecture.id} scene={s} t={t} summary={summary} label={`${s.id}-${i + 1}`} />;
+  return (
+    <SceneView assetDir={lecture.id} scene={s} t={t} summary={summary} label={`${s.id}-${i + 1}`}
+      capture={lecture.capture} captionPlaces={lecture.captionPlaces} />
+  );
 };
 
 export const NotebookCompositions: React.FC<{ lectures: NotebookLecture[] }> = ({ lectures }) => (

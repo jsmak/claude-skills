@@ -1,13 +1,11 @@
 import React from "react";
 import { AbsoluteFill, Easing, Img, staticFile } from "remotion";
-import { Beat, Box, CAPTURE_WIDTH, HEIGHT, SceneData, WIDTH } from "./types";
-
-const IMAGE_SCALE = WIDTH / CAPTURE_WIDTH; // 캡처 이미지 픽셀 → 화면 픽셀
+import { Beat, Box, DEFAULT_CAPTURE, HEIGHT, Place, SceneData, WIDTH } from "./types";
 
 const FONT = "'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif";
 const ACCENT = "#FFC83D";
 const MOVE = 0.55; // 강조가 옮겨 가는 시간 (초)
-const MAX_ZOOM = 2.0; // 캡처가 4K라서 2배까지 확대해도 선명합니다
+const MAX_ZOOM = 2.0; // 4K 캡처면 2배까지 확대해도 선명합니다 (QHD 캡처는 1.33배부터 약간 흐려짐)
 
 type Camera = { s: number; cx: number; cy: number };
 
@@ -22,9 +20,10 @@ const union = (boxes: Box[]): Box =>
   );
 
 // 강조 영역이 화면에 크게 보이도록 카메라(확대 배율, 중심)를 정합니다.
-const cameraFor = (beat: Beat): Camera => {
+// scale = 캡처 이미지 픽셀 → 화면 픽셀
+const cameraFor = (beat: Beat, scale: number): Camera => {
   if (!beat.zoom || beat.boxes.length === 0) return { s: 1, cx: WIDTH / 2, cy: HEIGHT / 2 };
-  const [x1, y1, x2, y2] = union(beat.boxes).map((v) => v * IMAGE_SCALE);
+  const [x1, y1, x2, y2] = union(beat.boxes).map((v) => v * scale);
   const s = Math.max(1, Math.min(MAX_ZOOM, (0.7 * WIDTH) / (x2 - x1), (0.5 * HEIGHT) / (y2 - y1)));
   const clamp = (v: number, half: number, full: number) => Math.min(full - half, Math.max(half, v));
   return {
@@ -34,12 +33,11 @@ const cameraFor = (beat: Beat): Camera => {
   };
 };
 
-const toScreen = (cam: Camera, x: number, y: number) => [
-  (x * IMAGE_SCALE - cam.cx) * cam.s + WIDTH / 2,
-  (y * IMAGE_SCALE - cam.cy) * cam.s + HEIGHT / 2,
+const toScreen = (cam: Camera, scale: number, x: number, y: number) => [
+  (x * scale - cam.cx) * cam.s + WIDTH / 2,
+  (y * scale - cam.cy) * cam.s + HEIGHT / 2,
 ];
 
-type Place = "bottom" | "top" | "middle";
 const PLACE_TOP: Record<Place, number> = { bottom: HEIGHT - 70 - 110, top: 150, middle: HEIGHT / 2 - 55 };
 
 const Caption: React.FC<{ text: string; since: number; place: Place }> = ({ text, since, place }) => {
@@ -132,7 +130,10 @@ export const SceneView: React.FC<{
   t: number;
   summary?: { items: string[]; title: string; thanksAt: number | null };
   label?: string; // 확인용 이미지에만 찍는 장면-순서 번호
-}> = ({ assetDir, scene, t, summary, label }) => {
+  capture?: { width: number; height: number };
+  captionPlaces?: Place[];
+}> = ({ assetDir, scene, t, summary, label, capture = DEFAULT_CAPTURE, captionPlaces = ["bottom", "top", "middle"] }) => {
+  const scale = WIDTH / capture.width;
   const beats = scene.beats;
   let i = 0;
   while (i + 1 < beats.length && beats[i + 1].t <= t) i++;
@@ -141,8 +142,8 @@ export const SceneView: React.FC<{
   const since = t - cur.t;
   const p = prev ? ease(since / MOVE) : 1;
 
-  const c1 = cameraFor(cur);
-  const c0 = prev ? cameraFor(prev) : c1;
+  const c1 = cameraFor(cur, scale);
+  const c0 = prev ? cameraFor(prev, scale) : c1;
   const cam: Camera = { s: lerp(c0.s, c1.s, p), cx: lerp(c0.cx, c1.cx, p), cy: lerp(c0.cy, c1.cy, p) };
 
   const dim0 = prev && prev.boxes.length ? 1 : 0;
@@ -153,23 +154,24 @@ export const SceneView: React.FC<{
   if (prev && p < 1) layers.push({ boxes: prev.boxes, opacity: 1 - p });
 
   const transform = `translate(${WIDTH / 2}px, ${HEIGHT / 2}px) scale(${cam.s}) translate(${-cam.cx}px, ${-cam.cy}px)`;
-  const W = 3840;
-  const H = 2160;
+  const W = capture.width;
+  const H = capture.height;
 
-  // 자막은 아래가 기본이고, 강조 박스를 더 적게 가리는 쪽(위/아래)에 둡니다.
+  // 자막은 허용된 자리 중 강조 박스를 가장 적게 가리는 곳에 둡니다 (같으면 앞에 적힌 자리).
   const covered = (zoneTop: number, zoneBottom: number) =>
     cur.boxes.reduce((sum, b) => {
-      const [x1, y1] = toScreen(c1, b[0], b[1]);
-      const [x2, y2] = toScreen(c1, b[2], b[3]);
+      const [x1, y1] = toScreen(c1, scale, b[0], b[1]);
+      const [x2, y2] = toScreen(c1, scale, b[2], b[3]);
       const h = Math.max(0, Math.min(y2, zoneBottom) - Math.max(y1, zoneTop));
       const w = Math.max(0, Math.min(x2, WIDTH - 300) - Math.max(x1, 300));
       return sum + h * w;
     }, 0);
-  const spots: { place: Place; area: number }[] = [
-    { place: "bottom", area: covered(HEIGHT - 200, HEIGHT - 50) },
-    { place: "top", area: covered(130, 280) },
-    { place: "middle", area: covered(HEIGHT / 2 - 75, HEIGHT / 2 + 75) },
-  ];
+  const zone: Record<Place, [number, number]> = {
+    bottom: [HEIGHT - 200, HEIGHT - 50],
+    top: [130, 280],
+    middle: [HEIGHT / 2 - 75, HEIGHT / 2 + 75],
+  };
+  const spots = captionPlaces.map((place) => ({ place, area: covered(...zone[place]) }));
   const captionPlace = spots.reduce((a, b) => (b.area < a.area ? b : a)).place;
 
   const sameCaption = prev && prev.caption === cur.caption;

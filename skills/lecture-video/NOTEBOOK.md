@@ -90,6 +90,29 @@ folder; find its Drive id (Drive connector `search_files`) and open
 - Clicking a cell leaves a selection outline and toolbar in the capture; S01 is
   the one place that's usually visible. Fine to leave.
 - Leave Chrome as you found it at the end or tell the person: F11, Ctrl+0.
+- **The extension's tab may be a background tab in another of the person's
+  windows** (lecture 04: it sat behind their GitHub tab), and Colab resets
+  `document.title`, so no window title matches `CAPTURE_TAB`. Find the window
+  that holds it, send `-Keys '^9'` (last tab) to that window by its own title,
+  then the window title becomes `CAPTURE_TAB - Google Chrome`. `capture.ps1`
+  walks every top-level window, so a second Chrome window is found by title.
+- `capture.ps1` carries a UTF-8 BOM so Windows PowerShell 5.1 can run it too
+  (without it, 5.1 reads the Korean messages as ANSI and fails to parse).
+  Keep the BOM when editing.
+- **Not every screen is 4K.** A 2560×1440 / 100% screen gives 2560×1440
+  captures at zoom 175% (css viewport 1463 wide). `build_scenes.py` records
+  the capture size in the data, so boxes still land; zoom beyond ~1.3× is
+  slightly soft.
+- Park the mouse off the notebook before capturing
+  (`[System.Windows.Forms.Cursor]::Position`) — a hover tooltip over the code
+  shows up in the capture.
+- **Colab hides a first cell that is only an "Open in Colab" badge**, so DOM
+  cell N is notebook cell N+1. Give `build_scenes.py` a copy of the notebook
+  without that cell (`"notebook": "nb_layout.ipynb"`), or every code box reads
+  the wrong cell's source.
+- Markdown tables are not measured by `layout.js`; box them with `px` from a
+  `grid_crop.py` crop of the capture. Same for list numbers, which sit left of
+  the measured text — widen an `md` list box with `px`.
 
 ## 4. Measure the layout
 
@@ -169,7 +192,7 @@ import { NotebookCompositions } from "./notebook/NotebookCompositions";
 import { NotebookLecture } from "./notebook/types";
 
 export const RemotionRoot: React.FC = () => (
-  <NotebookCompositions lectures={[tensor01 as NotebookLecture]} />
+  <NotebookCompositions lectures={[tensor01 as unknown as NotebookLecture]} />
 );
 ```
 It registers `Notebook-<id>` (the video) and `NotebookPreview-<id>` (one frame
@@ -186,7 +209,8 @@ first and fix what you see (boxes off, captions covering a box, zoom too weak),
 then send the sheets and **wait** for the person's yes or their notes by beat
 number ("S05-4 자막을 …"). Captions pick bottom / top / middle by whichever
 covers the boxes least; a beat whose boxes span top and bottom lands in the
-middle.
+middle. For a YouTube upload, set `"captionPlaces": ["top", "middle"]` in
+scenes.json so captions never sit where YouTube draws its subtitles.
 
 ## 9. Render and add the narration
 
