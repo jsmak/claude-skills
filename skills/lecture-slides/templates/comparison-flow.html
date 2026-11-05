@@ -1,0 +1,45 @@
+<section id="seq" data-transition="fade" style="background:#F7F8FB;color:#2E3440;font-family:'Noto Sans KR', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'Poppins', 'Noto Sans KR', sans-serif;font-size:24px;font-weight:600;letter-spacing:3px;color:#3A6FD8">Sequential → Non-sequential</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.15">하나의 테이블에서 여러 종류의 입력으로</h2>
+</div>
+<div style="display:flex;gap:32px">
+<div style="width:560px;display:flex;flex-direction:column;align-items:center;gap:12px;background:#FDFDFF;border:2px solid #E3E6EE;border-radius:20px;padding:28px 32px">
+<p style="align-self:start;font-size:30px;font-weight:700;color:#545B6B">순차 모델 · 6강</p>
+<p style="width:400px;font-size:26px;text-align:center;background:#EEF3FD;border-radius:10px;padding:12px">테이블 1개 · 특성 8개</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:400px;font-size:26px;text-align:center;background:#E3E6EE;border-radius:10px;padding:12px">은닉층 (64)</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:400px;font-size:26px;text-align:center;background:#E3E6EE;border-radius:10px;padding:12px">은닉층 (32)</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:400px;font-size:26px;text-align:center;background:#2E3440;color:#F7F8FB;border-radius:10px;padding:12px">출력 1개 · 집값</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;background:#FDFDFF;border:2px solid #E3E6EE;border-radius:20px;padding:28px 32px">
+<p style="align-self:start;font-size:30px;font-weight:700;color:#3A6FD8">비순차 모델 · 실무</p>
+<div style="display:flex;gap:24px">
+<div style="width:300px;display:flex;flex-direction:column;align-items:center;gap:12px">
+<p style="width:300px;font-size:26px;text-align:center;background:#EEF3FD;border-radius:10px;padding:12px">테이블</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:300px;font-size:26px;text-align:center;background:#E3E6EE;border-radius:10px;padding:12px">MLP</p>
+</div>
+<div style="width:300px;display:flex;flex-direction:column;align-items:center;gap:12px">
+<p style="width:300px;font-size:26px;text-align:center;background:#FFF4E2;border-radius:10px;padding:12px">이미지</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:300px;font-size:26px;text-align:center;background:#E3E6EE;border-radius:10px;padding:12px">CNN</p>
+</div>
+<div style="width:300px;display:flex;flex-direction:column;align-items:center;gap:12px">
+<p style="width:300px;font-size:26px;text-align:center;background:#EEECFA;border-radius:10px;padding:12px">텍스트 · 음성</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:300px;font-size:26px;text-align:center;background:#E3E6EE;border-radius:10px;padding:12px">언어·음성 모델</p>
+</div>
+</div>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:948px;font-size:26px;text-align:center;background:#6B5FC7;color:#F7F8FB;border-radius:10px;padding:12px">결합해서 함께 학습</p>
+<x-shape kind="arrow-down" style="width:28px;height:40px;background:#AEB4C2"></x-shape>
+<p style="width:948px;font-size:26px;text-align:center;background:#2E3440;color:#F7F8FB;border-radius:10px;padding:12px">출력 하나 또는 여러 개</p>
+</div>
+</div>
+<aside>딥러닝 모델을 개발할 때에는 우리가 알고 있는 엑셀처럼 하나의 테이블을 입력으로 사용하는 것이 일반적입니다.
+6강에서 만든 모델도 특성 여덟 개를 한 줄로 넣어 집값 하나를 예측했습니다. 이렇게 층이 한 줄로 이어진 모델을 순차 모델이라고 합니다.
+하지만 실무에서는 여러 신경망을 조합해서 테이블, 이미지, 텍스트, 음성처럼 형태가 다른 데이터를 각각 처리한 후, 결합해서 함께 학습하도록 설계할 수 있습니다.</aside>
+</section>

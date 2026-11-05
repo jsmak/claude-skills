@@ -1,0 +1,43 @@
+<section id="structure" data-transition="fade" style="background:#F7F8FB;color:#2E3440;font-family:'Noto Sans KR', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:8px">
+<p style="font-family:'Poppins', 'Noto Sans KR', sans-serif;font-size:24px;font-weight:600;letter-spacing:3px;color:#3A6FD8">⑤ 예제 모델 · 순전파</p>
+<h2 style="font-size:60px;font-weight:700;line-height:1.15">두 입력 → 공유 몸통 → 두 출력</h2>
+<p style="font-size:26px;color:#545B6B">B = 배치 크기(64). 괄호는 그 단계 출력 텐서의 shape</p>
+<div style="position:absolute;left:128px;top:300px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#EEF3FD;border:2px solid #3A6FD8;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">X_deep</p><p style="font-size:24px;line-height:1.3">(B, 6)</p><p style="font-size:24px;line-height:1.3;color:#545B6B">MedInc 등 6개</p></div>
+<div style="position:absolute;left:358px;top:300px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#EEF3FD;border:2px solid #3A6FD8;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">ResBlock ①</p><p style="font-size:24px;line-height:1.3">6→24→6</p><p style="font-size:24px;line-height:1.3;color:#545B6B">(B, 6)</p></div>
+<div style="position:absolute;left:588px;top:300px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#EEF3FD;border:2px solid #3A6FD8;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">ResBlock ②</p><p style="font-size:24px;line-height:1.3">6→24→6</p><p style="font-size:24px;line-height:1.3;color:#545B6B">(B, 6)</p></div>
+<div style="position:absolute;left:128px;top:660px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#FFF4E2;border:2px solid #F5A623;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">X_wide</p><p style="font-size:24px;line-height:1.3">(B, 2)</p><p style="font-size:24px;line-height:1.3;color:#545B6B">위도 · 경도</p></div>
+<div style="position:absolute;left:358px;top:660px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#FFF4E2;border:2px solid #F5A623;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">wide_layer</p><p style="font-size:24px;line-height:1.3">Linear 2→4</p><p style="font-size:24px;line-height:1.3;color:#545B6B">(B, 4)</p></div>
+<div style="position:absolute;left:818px;top:480px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#EEECFA;border:2px solid #6B5FC7;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">torch.cat</p><p style="font-size:24px;line-height:1.3">6 + 4 = 10</p><p style="font-size:24px;line-height:1.3;color:#545B6B">(B, 10)</p></div>
+<div style="position:absolute;left:1048px;top:480px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#EEECFA;border:2px solid #6B5FC7;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">ResBlock ③</p><p style="font-size:24px;line-height:1.3">10→40→10</p><p style="font-size:24px;line-height:1.3;color:#545B6B">(B, 10)</p></div>
+<div style="position:absolute;left:1278px;top:300px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#FDFDFF;border:2px solid #2E3440;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">reg_head</p><p style="font-size:24px;line-height:1.3">Linear 10→1</p><p style="font-size:24px;line-height:1.3;color:#545B6B">집값 (B, 1)</p></div>
+<div style="position:absolute;left:1278px;top:660px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#FDFDFF;border:2px solid #2E3440;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">cls_head</p><p style="font-size:24px;line-height:1.3">Linear 10→1</p><p style="font-size:24px;line-height:1.3;color:#545B6B">로짓 (B, 1)</p></div>
+<div style="position:absolute;left:1508px;top:300px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#FDFDFF;border:2px dashed #2E3440;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">MSELoss</p><p style="font-size:24px;line-height:1.3;color:#545B6B">L_reg</p></div>
+<div style="position:absolute;left:1508px;top:660px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#FDFDFF;border:2px dashed #2E3440;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3">BCE (로짓)</p><p style="font-size:24px;line-height:1.3;color:#545B6B">L_cls</p></div>
+<div style="position:absolute;left:1508px;top:480px;width:190px;height:124px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#2E3440;border-radius:12px"><p style="font-size:24px;font-weight:700;line-height:1.3;color:#F7F8FB">Total Loss</p><p style="font-size:24px;line-height:1.3;color:#C9CED8">α·L_reg</p><p style="font-size:24px;line-height:1.3;color:#C9CED8">+ β·L_cls</p></div>
+<div style="position:absolute;left:128px;top:470px;width:640px;display:flex;flex-direction:column;gap:6px">
+<p style="font-size:26px;line-height:1.4"><b style="color:#3A6FD8">파랑 · Deep 경로</b> — 6개 특성의 비선형 패턴</p>
+<p style="font-size:26px;line-height:1.4"><b style="color:#A35F00">주황 · Wide 경로</b> — 위치 정보를 얕게 변환</p>
+<p style="font-size:26px;line-height:1.4"><b style="color:#6B5FC7">보라 · 공유 몸통</b> — 두 태스크가 함께 쓰는 표현</p>
+</div>
+<x-connector x1="318" y1="362" x2="358" y2="362" head="end" style="color:#3A6FD8;border-width:3px"></x-connector>
+<x-connector x1="548" y1="362" x2="588" y2="362" head="end" style="color:#3A6FD8;border-width:3px"></x-connector>
+<x-connector x1="778" y1="362" x2="913" y2="480" route="hv" head="end" style="color:#3A6FD8;border-width:3px"></x-connector>
+<x-connector x1="318" y1="722" x2="358" y2="722" head="end" style="color:#F5A623;border-width:3px"></x-connector>
+<x-connector x1="548" y1="722" x2="913" y2="604" route="hv" head="end" style="color:#F5A623;border-width:3px"></x-connector>
+<x-connector x1="1008" y1="542" x2="1048" y2="542" head="end" style="color:#6B5FC7;border-width:3px"></x-connector>
+<x-connector x1="1238" y1="522" x2="1373" y2="424" route="hv" head="end" style="color:#6B5FC7;border-width:3px"></x-connector>
+<x-connector x1="1238" y1="562" x2="1373" y2="660" route="hv" head="end" style="color:#6B5FC7;border-width:3px"></x-connector>
+<x-connector x1="1468" y1="362" x2="1508" y2="362" head="end" style="color:#2E3440;border-width:3px"></x-connector>
+<x-connector x1="1468" y1="722" x2="1508" y2="722" head="end" style="color:#2E3440;border-width:3px"></x-connector>
+<x-connector x1="1603" y1="424" x2="1603" y2="480" head="end" style="color:#2E3440;border-width:3px"></x-connector>
+<x-connector x1="1603" y1="660" x2="1603" y2="604" head="end" style="color:#2E3440;border-width:3px"></x-connector>
+<p style="position:absolute;left:128px;top:840px;width:1664px;font-size:26px;color:#545B6B">학습 파라미터 전체 1,520개 · backward()는 Total Loss 하나에서 시작</p>
+<aside>이제 오늘 예제 모델의 구조입니다. 왼쪽에서 오른쪽으로 순전파를 따라가 보겠습니다.
+파란색 딥 경로는 MedInc부터 AveOccup까지 6개 특성을 잔차 블록 두 개에 통과시킵니다. 이때 shape은 B 콤마 6 그대로 유지됩니다.
+잔차 블록은 x 더하기 F(x)를 계산하기 때문에 입력과 출력의 차원이 같아야 하기 때문입니다.
+주황색 와이드 경로는 위도와 경도 2개를 선형 층 하나만 거쳐 4개 값으로 만듭니다.
+두 경로는 torch.cat으로 이어 붙여 10개가 되고, 공유 몸통인 세 번째 잔차 블록을 지난 뒤 회귀 헤드와 분류 헤드로 갈라집니다.
+회귀 헤드는 집값을, 분류 헤드는 시그모이드를 적용하기 전의 값인 로짓을 출력합니다.
+마지막으로 두 손실에 알파와 베타를 곱해 더한 하나의 손실을 만들고, 역전파는 이 하나의 손실에서 시작합니다.
+전체 학습 파라미터는 1,520개입니다.</aside>
+</section>

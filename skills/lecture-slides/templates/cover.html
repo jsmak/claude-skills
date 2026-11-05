@@ -1,0 +1,24 @@
+<section id="cover" data-transition="fade" style="background:#2E3440;color:#F7F8FB;font-family:'Noto Sans KR', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:32px">
+<svg aria-label="두 개의 입력 선이 하나로 합쳐진 뒤 다시 두 개의 출력으로 갈라지는 비순차 구조" width="560" height="480" viewBox="0 0 560 480" style="position:absolute;left:1200px;top:300px;width:560px;height:480px">
+<path d="M40 100 C 160 100, 180 240, 280 240" fill="none" stroke="#4A8AE8" stroke-width="8"/>
+<path d="M40 380 C 160 380, 180 240, 280 240" fill="none" stroke="#F5A623" stroke-width="8"/>
+<path d="M280 240 C 380 240, 400 100, 520 100" fill="none" stroke="#9D93E8" stroke-width="8"/>
+<path d="M280 240 C 380 240, 400 380, 520 380" fill="none" stroke="#9D93E8" stroke-width="8"/>
+<circle cx="40" cy="100" r="22" fill="#4A8AE8"/>
+<circle cx="40" cy="380" r="22" fill="#F5A623"/>
+<circle cx="280" cy="240" r="30" fill="#F7F8FB"/>
+<circle cx="520" cy="100" r="22" fill="#9D93E8"/>
+<circle cx="520" cy="380" r="22" fill="#9D93E8"/>
+</svg>
+<p style="font-family:'Poppins', 'Noto Sans KR', sans-serif;font-size:28px;font-weight:600;letter-spacing:4px;color:#4A8AE8">LECTURE 08</p>
+<h1 style="width:1000px;font-size:96px;font-weight:700;line-height:1.15">PyTorch 비순차 모델</h1>
+<p style="width:1000px;font-size:36px;line-height:1.4;color:#C9CED8">캘리포니아 집값 데이터로 보는<br>다중 입력 · 잔차 연결 · 다중 출력</p>
+<div style="display:flex;gap:16px">
+<p style="font-size:26px;color:#8DB4F5;background:#3B4A63;border-radius:40px;padding:10px 24px">Deep 경로 · 잔차 블록 ×2</p>
+<p style="font-size:26px;color:#F5C16C;background:#4E4433;border-radius:40px;padding:10px 24px">Wide 경로 · 위도·경도</p>
+<p style="font-size:26px;color:#C2BBF2;background:#41405E;border-radius:40px;padding:10px 24px">회귀 + 분류 동시 학습</p>
+</div>
+<aside>안녕하세요.
+지난 시간까지는 입력 하나를 받아 출력 하나를 내는 모델을 만들었습니다.
+이번 강의에서는 입력이 두 개이고, 출력이 회귀와 분류 두 개인 비순차 모델로, 실무에서 고려할 수 있는 구조를 살펴보겠습니다.</aside>
+</section>
